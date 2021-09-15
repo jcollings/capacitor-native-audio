@@ -52,19 +52,27 @@ export class NativeAudioWeb extends WebPlugin {
             return bytes;
         }
         const context = new AudioContext();
-        let contents = await Filesystem.readFile({
-            path: this.asset_cache[options.assetId].substr(5),
-            directory: Directory.Data,
-            encoding: Encoding.UTF16,
-        });
-        const file_data = _stringToMultiUint8Array(contents.data);
-        const chunk = _convertUint8ArrayToFloat32Array(file_data);
-        const audio_buffer = context.createBuffer(1, chunk.length, context.sampleRate);
-        audio_buffer.getChannelData(0).set(chunk);
-        const source = context.createBufferSource();
-        source.buffer = audio_buffer;
-        source.connect(context.destination);
-        source.start();
+        try {
+            // TODO: For some reason the web recordings goto /dictations/dictations/recording-tmp.wav
+            const readFileArgs = {
+                path: this.asset_cache[options.assetId].substr(6),
+                directory: Directory.Data,
+                encoding: Encoding.UTF16,
+            };
+            console.log('Filesystem.readFile', readFileArgs);
+            let contents = await Filesystem.readFile(readFileArgs);
+            const file_data = _stringToMultiUint8Array(contents.data);
+            const chunk = _convertUint8ArrayToFloat32Array(file_data);
+            const audio_buffer = context.createBuffer(1, chunk.length, context.sampleRate);
+            audio_buffer.getChannelData(0).set(chunk);
+            const source = context.createBufferSource();
+            source.buffer = audio_buffer;
+            source.connect(context.destination);
+            source.start();
+        }
+        catch (e) {
+            console.error(e);
+        }
     }
     loop(options) {
         console.log(options);
